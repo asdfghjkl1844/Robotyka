@@ -147,13 +147,12 @@ void printMap(int map[MAP_SIZE][MAP_SIZE]) {
         cout << "\n";
     }
 }
-
 int main() {
     int map[MAP_SIZE][MAP_SIZE];
     loadMap(map, "grid1.txt"); // Wczytaj mapę z pliku grid.txt
 
-    Point start(0, 0);
-    Point goal(19, 19);
+    Point start(0, 19); // Lewy dolny róg
+    Point goal(19, 0);  // Prawy górny róg
 
     if (aStar(map, start, goal)) {
         cout << "Sciezka zostala znaleziona:\n";
