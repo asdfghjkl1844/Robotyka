@@ -72,7 +72,15 @@ bool aStar(int map[MAP_SIZE][MAP_SIZE], Point start, Point goal) {
     while (!openList.empty()) {
         // Znajdź Node z najniższym kosztem f
         auto currentIt = min_element(openList.begin(), openList.end(),
-                                          [](Node* a, Node* b) { return a->fCost() < b->fCost(); });
+                             [](Node* a, Node* b) {
+                                 if (a->fCost() != b->fCost())
+                                     return a->fCost() < b->fCost();
+                                 // Konflikty: wybierz węzeł z mniejszym `y`, a następnie `x`.
+                                 if (a->position.y != b->position.y)
+                                     return a->position.y < b->position.y;
+                                 return a->position.x < b->position.x;
+                             });
+
         Node* currentNode = *currentIt;
 
         // Jeśli dotarliśmy do celu
