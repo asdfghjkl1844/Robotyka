@@ -48,10 +48,6 @@ vector<tuple<Point, double>> getNeighbors(const Point& point) {
         {Point(point.x, point.y - 1), 1.0},       // Dół
         {Point(point.x - 1, point.y), 1.0},       // Lewo
         {Point(point.x + 1, point.y), 1.0},       // Prawo
-        //{Point(point.x - 1, point.y + 1), sqrt(2)}, // Lewo-góra
-        //{Point(point.x + 1, point.y + 1), sqrt(2)}, // Prawo-góra
-        //{Point(point.x - 1, point.y - 1), sqrt(2)}, // Lewo-dół
-        //{Point(point.x + 1, point.y - 1), sqrt(2)}  // Prawo-dół
     };
 }
 
