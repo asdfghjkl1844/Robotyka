@@ -8,7 +8,7 @@ using namespace std;
 const int MAP_SIZE = 20;
 const int OBSTACLE = 5;
 const int FREE = 0;
-const int PATH = 2;
+const int PATH = 3;
 
 // Współrzędne punktu na mapie
 struct Point {
