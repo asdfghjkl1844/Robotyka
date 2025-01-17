@@ -9,14 +9,12 @@ const int MAP_SIZE = 20;
 const int OBSTACLE = 5;
 const int FREE = 0;
 const int PATH = 3;
+int ORDER = 0;
 
-// Współrzędne punktu na mapie
 struct Point {
-    int x, y;
-    Point(int x, int y) : x(x), y(y) {}
+    int x, y, z;
+    Point(int x, int y, int z) : x(x), y(y), z(z) {}
 };
-
-// Węzeł w algorytmie A*
 
 struct Node {
     Point position;
@@ -31,27 +29,26 @@ struct Node {
     }
 };
 
-// Obliczamy heurystykę jako odległość euklidesową
+// Obliczamy heurystyke jako odleglosc euklidesowa
 double calculateHeuristic(const Point& a, const Point& b) {
     return sqrt(pow(a.x - b.x, 2) + pow(a.y - b.y, 2));
 }
 
-// Sprawdza, czy punkt znajduje się w granicach mapy
 bool isPointOnMap(int x, int y) {
     return x >= 0 && x < MAP_SIZE && y >= 0 && y < MAP_SIZE;
 }
 
-// Generuje sąsiadów (góra, dół, lewo, prawo, ruchy po skosie)
+// Generujemy sasiadow (gora, dol, lewo, prawo)
 vector<tuple<Point, double>> getNeighbors(const Point& point) {
     return {
-        {Point(point.x, point.y + 1), 1.0},       // Góra
-        {Point(point.x, point.y - 1), 1.0},       // Dół
-        {Point(point.x - 1, point.y), 1.0},       // Lewo
-        {Point(point.x + 1, point.y), 1.0},       // Prawo
+        {Point(point.x, point.y + 1, ORDER), 1.0},
+        {Point(point.x, point.y - 1, ORDER + 1), 1.0},
+        {Point(point.x - 1, point.y, ORDER + 2), 1.0},
+        {Point(point.x + 1, point.y, ORDER + 3), 1.0},
     };
 }
 
-// Zwraca wskaźnik do Node w liście (jeśli istnieje)
+// Zwraca wskaznik do Node w liscie (jesli istnieje)
 Node* findNodeInList(const vector<Node*>& list, const Point& point) {
     for (Node* node : list) {
         if (node->position.x == point.x && node->position.y == point.y) {
@@ -61,7 +58,6 @@ Node* findNodeInList(const vector<Node*>& list, const Point& point) {
     return nullptr;
 }
 
-// Główna funkcja algorytmu A*
 bool aStar(int map[MAP_SIZE][MAP_SIZE], Point start, Point goal) {
     vector<Node*> openList;
     vector<Node*> closedList;
@@ -70,22 +66,22 @@ bool aStar(int map[MAP_SIZE][MAP_SIZE], Point start, Point goal) {
     openList.push_back(new Node(start, 0.0, calculateHeuristic(start, goal), nullptr));
 
     while (!openList.empty()) {
-        // Znajdź Node z najniższym kosztem f
         auto currentIt = min_element(openList.begin(), openList.end(),
-                             [](Node* a, Node* b) {
-                                 if (a->fCost() != b->fCost())
-                                     return a->fCost() < b->fCost();
-                                 // Konflikty: wybierz węzeł z mniejszym `y`, a następnie `x`.
-                                 if (a->position.y != b->position.y)
-                                     return a->position.y < b->position.y;
-                                 return a->position.x < b->position.x;
-                             });
+            [](Node* a, Node* b) {
+                if (a->fCost() != b->fCost()) {
+                    return a->fCost() < b->fCost();
+                }
+                if (a->position.z > b->position.z) {
+                    return a->position.z > b->position.z;
+                }
+                return b->position.z > a->position.z;
+            });
 
         Node* currentNode = *currentIt;
 
-        // Jeśli dotarliśmy do celu
+        // Jesli dotarlismy do celu
         if (currentNode->position.x == goal.x && currentNode->position.y == goal.y) {
-            // Odtwórz ścieżkę
+            // Odtworz sciezke
             Node* pathNode = currentNode;
             while (pathNode) {
                 map[pathNode->position.y][pathNode->position.x] = PATH;
@@ -94,38 +90,40 @@ bool aStar(int map[MAP_SIZE][MAP_SIZE], Point start, Point goal) {
             return true;
         }
 
-        // Przenieś currentNode z otwartej do zamkniętej listy
+        // Przenies currentNode z otwartej do zamknietej listy
         openList.erase(currentIt);
         closedList.push_back(currentNode);
 
-        // Przetwórz sąsiadów
+        // Przetworz sasiadow
         for (const auto& [neighbor, moveCost] : getNeighbors(currentNode->position)) {
             if (!isPointOnMap(neighbor.x, neighbor.y) || map[neighbor.y][neighbor.x] == OBSTACLE) {
                 continue;
             }
 
+            ORDER += 4;
+
             double gCost = currentNode->gCost + moveCost; // Koszt ruchu
             double hCost = calculateHeuristic(neighbor, goal);
 
             Node* neighborNode = findNodeInList(closedList, neighbor);
-            if (neighborNode) continue; // Sąsiad jest na zamkniętej liście
+            if (neighborNode) continue; // Sasiad jest na zamknietej liscie
 
             neighborNode = findNodeInList(openList, neighbor);
             if (!neighborNode) {
                 // Nowy Node - dodaj do otwartej listy
                 openList.push_back(new Node(neighbor, gCost, hCost, currentNode));
-            } else if (gCost < neighborNode->gCost) {
-                // Aktualizuj gCost i rodzica, jeśli znaleziono lepszą ścieżkę
+            }
+            else if (gCost < neighborNode->gCost) {
+                // Aktualizuj gCost i rodzica, jesli znaleziono lepsza sciezke
                 neighborNode->gCost = gCost;
                 neighborNode->parent = currentNode;
             }
         }
     }
 
-    return false; // Brak ścieżki
+    return false; // Brak sciezki
 }
 
-// Wczytuje mapę z pliku
 void loadMap(int map[MAP_SIZE][MAP_SIZE], const string& filename) {
     ifstream file(filename);
     if (!file.is_open()) {
@@ -142,7 +140,6 @@ void loadMap(int map[MAP_SIZE][MAP_SIZE], const string& filename) {
     file.close();
 }
 
-// Wyświetla mapę
 void printMap(int map[MAP_SIZE][MAP_SIZE]) {
     for (int i = 0; i < MAP_SIZE; i++) {
         for (int j = 0; j < MAP_SIZE; j++) {
@@ -153,17 +150,19 @@ void printMap(int map[MAP_SIZE][MAP_SIZE]) {
 }
 int main() {
     int map[MAP_SIZE][MAP_SIZE];
-    loadMap(map, "grid1.txt"); // Wczytaj mapę z pliku grid.txt
+    loadMap(map, "grid.txt");
 
-    Point start(0, 19); // Lewy dolny róg
-    Point goal(19, 0);  // Prawy górny róg
+    Point start(0, 19, -1);
+    Point goal(19, 0, -1);
 
     if (aStar(map, start, goal)) {
         cout << "Sciezka zostala znaleziona:\n";
-    } else {
+    }
+    else {
         cout << "Nie udalo sie znalezc sciezki.\n";
     }
 
     printMap(map);
     return 0;
 }
+
